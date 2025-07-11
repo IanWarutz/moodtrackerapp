@@ -11,7 +11,7 @@ st.markdown(
     """
     <div style="border:2px solid #A3BFFA; border-radius:10px; padding:10px; background-color:#F0F8FF; margin-bottom:20px;">
         <h4 style="color:#2C5282; margin:0;">🌟 Take Charge of Your Mind – <b>loopbreakerMD</b>!</h4>
-        <p style="margin:0;">
+        <p style="margin:0; color:#2C5282;">
             For confidential support and professional care, reach out to <b>loopbreakerMD@gmail.com</b>.<br>
             <i>Your journey to better mental wellbeing starts now!</i>
         </p>
