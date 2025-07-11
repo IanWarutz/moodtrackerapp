@@ -6,6 +6,20 @@ st.set_page_config(page_title="🧠 MoodTracker", page_icon="🧠", layout="cent
 
 st.title("🧠 MoodTracker – Your Personal Wellbeing Journal")
 
+# --- Small Advertisement ---
+st.markdown(
+    """
+    <div style="border:2px solid #A3BFFA; border-radius:10px; padding:10px; background-color:#F0F8FF; margin-bottom:20px;">
+        <h4 style="color:#2C5282; margin:0;">🌟 Take Charge of Your Mind!</h4>
+        <p style="margin:0;">
+            For confidential support and professional care, reach out to <b>loopbreakerMD@gmail.com</b>.<br>
+            <i>Your journey to better mental wellbeing starts now!</i>
+        </p>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
 # --- Data Privacy Notice and Consent ---
 st.info(
     "🔒 **Data Collection & Privacy Notice**\n\n"
@@ -40,11 +54,17 @@ if "demographics" not in st.session_state:
     with st.form("demographics_form", clear_on_submit=False):
         st.subheader("Tell us a bit about yourself (demographics)")
         age = st.number_input("Age", min_value=0, max_value=120, step=1)
-        gender = st.selectbox("Gender", options=["Prefer not to say", "Female", "Male", "Non-binary", "Other"])
+        gender = st.selectbox("Gender", options=["", "Prefer not to say", "Female", "Male", "Non-binary", "Other"])
         profession = st.text_input("Profession (e.g., Student, Engineer, Teacher, etc.)")
         submitted = st.form_submit_button("Submit Demographics")
         if submitted:
-            if age and profession.strip() != "":
+            if age < 14:
+                st.error("Sorry, you must be at least 14 years old to use MoodTracker.")
+                st.stop()
+            elif not (age and gender and profession.strip()):
+                st.error("Please fill in all fields before proceeding.")
+                st.stop()
+            else:
                 st.session_state.demographics = {
                     "age": int(age),
                     "gender": gender,
@@ -52,9 +72,6 @@ if "demographics" not in st.session_state:
                 }
                 st.success("Demographics saved! Thank you.")
                 st.rerun()
-            else:
-                st.error("Please enter your age and profession.")
-                st.stop()
 
 if "demographics" not in st.session_state:
     st.stop()
@@ -77,6 +94,7 @@ MOOD_OPTIONS = [
 ]
 POSITIVE_MOODS = {m for m, cat in MOOD_OPTIONS if cat == "positive"}
 NEGATIVE_MOODS = {m for m, cat in MOOD_OPTIONS if cat == "negative"}
+ALERT_MOODS = {"😔 Sad", "😰 Anxious", "😴 Tired"}
 
 # --- Session state initialization ---
 if "logs" not in st.session_state:
@@ -102,10 +120,14 @@ if st.session_state.logs:
 if st.session_state.day <= 7:
     st.header(f"Day {st.session_state.day}")
     mood_choices = [m for m, _ in MOOD_OPTIONS]
-    mood = st.selectbox("How do you feel today?", mood_choices, key=st.session_state.day)
+    mood = st.selectbox("How do you feel today?", [""] + mood_choices, key=st.session_state.day)
     note = st.text_area("Anything you'd like to add? (optional)", key=f"note_{st.session_state.day}")
 
     if st.button("Log Mood"):
+        # Require a mood to be picked
+        if not mood:
+            st.error("Please select your mood for today before logging.")
+            st.stop()
         # Store the log, including demographics for each entry (for analysis)
         entry = {
             "date": today_str,
@@ -161,6 +183,11 @@ else:
     st.write(f"**Most frequent mood:** {most_common}")
     st.write(f"**Positive days:** {positive_days} / 7")
     st.write(f"**Longest positive streak:** {streak} day(s)")
+
+    # --- Encourage seeking help if ALERT_MOODS for at least two days ---
+    alert_days = log_df["mood"].isin(ALERT_MOODS).sum()
+    if alert_days >= 2:
+        st.error("💡 It seems you've experienced sadness, anxiety, or tiredness for at least two days this week. Consider reaching out to a professional for support at loopbreakerMD@gmail.com 💪✨")
 
     # Personalised feedback
     if positive_days >= 5:
