@@ -64,45 +64,37 @@ st.write(
     "Let’s boost your self-awareness and mental wellbeing!"
 )
 
-# --- Emotion Wheel Definition (all constants, O(1) space) ---
-EMOTION_WHEEL = {
-    "Joy": ["Happy", "Proud", "Content", "Excited", "Optimistic", "Playful"],
-    "Trust": ["Supportive", "Trusting", "Respectful", "Kind", "Loving"],
-    "Fear": ["Worried", "Apprehensive", "Nervous", "Scared", "Insecure"],
-    "Surprise": ["Amazed", "Confused", "Startled", "Shocked", "Perplexed"],
-    "Sadness": ["Sad", "Disappointed", "Lonely", "Guilty", "Hopeless", "Lost"],
-    "Disgust": ["Annoyed", "Disapproving", "Dislike", "Disgusted", "Repulsed"],
-    "Anger": ["Angry", "Frustrated", "Annoyed", "Irritated", "Resentful"],
-    "Anticipation": ["Hopeful", "Curious", "Eager", "Interested", "Alert"]
+# --- Emotion Wheel Definition (Robert Plutchik's Emotion Wheel) ---
+# Image is from Wikimedia Commons, public domain:
+# https://commons.wikimedia.org/wiki/File:Plutchik-wheel.svg
+# This wheel contains 8 primary emotions, each with 2 intensities and secondary emotions for a total of 24 unique emotions
+
+PLUTCHIK_WHEEL_URL = "https://upload.wikimedia.org/wikipedia/commons/7/7b/Plutchik-wheel.svg"
+st.markdown("#### Choose your emotion by referencing the wheel below (click to enlarge):")
+st.image(PLUTCHIK_WHEEL_URL, caption="Plutchik's Emotion Wheel (click to enlarge)", use_container_width=True)
+
+# The full set of emotions on the Plutchik wheel:
+PLUTCHIK_EMOTIONS = {
+    "Joy": ["Serenity", "Joy", "Ecstasy"],
+    "Trust": ["Acceptance", "Trust", "Admiration"],
+    "Fear": ["Apprehension", "Fear", "Terror"],
+    "Surprise": ["Distraction", "Surprise", "Amazement"],
+    "Sadness": ["Pensiveness", "Sadness", "Grief"],
+    "Disgust": ["Boredom", "Disgust", "Loathing"],
+    "Anger": ["Annoyance", "Anger", "Rage"],
+    "Anticipation": ["Interest", "Anticipation", "Vigilance"]
 }
-CORE_EMOTIONS = tuple(EMOTION_WHEEL.keys())
 
-# --- Display Emotion Wheel as a fast-loading SVG ---
-WHEEL_URL = "https://upload.wikimedia.org/wikipedia/commons/7/7b/Plutchik-wheel.svg"
-st.markdown("#### Choose your emotion from the wheel below")
-st.image(WHEEL_URL, caption="Plutchik's Emotion Wheel", use_container_width=True)
-
-# --- Fast O(1) emotion wheel selector ---
-def emotion_wheel_selector():
-    col1, col2 = st.columns(2)
-    with col1:
-        core_emotion = st.radio(
-            "Core emotion family:",
-            CORE_EMOTIONS,
-            key="core_emotion"
-        )
-    with col2:
-        sub_emotions = EMOTION_WHEEL[core_emotion]
-        detailed_emotion = st.radio(
-            f"Select the word that best matches your feeling ({core_emotion}):",
-            sub_emotions,
-            key="detailed_emotion"
-        )
-    return f"{core_emotion} - {detailed_emotion}"
+# For a user-friendly selection, all emotions in a single list with family for grouping
+emotion_options = []
+for family, emotions in PLUTCHIK_EMOTIONS.items():
+    for emotion in emotions:
+        emotion_options.append(f"{family}: {emotion}")
 
 # --- Mood categories as sets for O(1) membership checking ---
-POSITIVE_MOODS = {"Joy", "Trust", "Anticipation"}
-NEGATIVE_MOODS = {"Fear", "Sadness", "Disgust", "Anger"}
+POSITIVE_FAMILIES = {"Joy", "Trust", "Anticipation"}
+NEGATIVE_FAMILIES = {"Fear", "Sadness", "Disgust", "Anger"}
+NEUTRAL_FAMILIES = {"Surprise"}
 
 # --- Session state initialization (all O(1) assignments) ---
 for key, value in [
@@ -126,28 +118,32 @@ if st.session_state.logs:
 # --- Mood logging section (all O(1) operations) ---
 if st.session_state.day <= 7:
     st.header(f"Day {st.session_state.day}")
-    mood = emotion_wheel_selector()
+    st.markdown("**Select the emotion that best describes your current feeling:**")
+    selected_emotion = st.selectbox(
+        "Emotion (refer to the wheel above):",
+        [""] + emotion_options,
+        key=f"emotion_{st.session_state.day}"
+    )
     note = st.text_area("Anything you'd like to add? (optional)", key=f"note_{st.session_state.day}")
 
     if st.button("Log Mood"):
-        # Do not proceed if mood selection is somehow empty or unselected
-        if not mood or " - " not in mood or any(part.strip() == "" for part in mood.split(" - ", 1)):
-            st.error("Please make sure you select both a core emotion and a specific emotion from the wheel.")
+        if not selected_emotion or selected_emotion.strip() == "":
+            st.error("Please select an emotion from the wheel before proceeding.")
             st.stop()
+        family, emotion = selected_emotion.split(":", 1)
+        family = family.strip()
+        emotion = emotion.strip()
+        if family in POSITIVE_FAMILIES:
+            mood_category = "positive"
+        elif family in NEGATIVE_FAMILIES:
+            mood_category = "negative"
+        else:
+            mood_category = "neutral"
 
-        # O(1) core mood lookup
-        core_mood = mood.split(" - ", 1)[0]
-        mood_category = (
-            "positive" if core_mood in POSITIVE_MOODS
-            else "negative" if core_mood in NEGATIVE_MOODS
-            else "neutral"
-        )
-
-        # O(1) append, O(1) dict creation
         entry = {
             "date": today_str,
             "day": st.session_state.day,
-            "mood": mood,
+            "mood": f"{family}: {emotion}",
             "note": note,
             "age": st.session_state.demographics["age"],
             "gender": st.session_state.demographics["gender"],
@@ -156,7 +152,7 @@ if st.session_state.day <= 7:
         }
         st.session_state.logs.append(entry)
 
-        # O(1) streak logic
+        # Streak logic
         if mood_category == "positive":
             st.session_state.streak += 1
             if st.session_state.streak > st.session_state.max_streak:
@@ -164,7 +160,7 @@ if st.session_state.day <= 7:
         else:
             st.session_state.streak = 0
 
-        # O(1) feedback
+        # Feedback
         if mood_category == "positive":
             st.success("🌟 Great job! Keep the positivity going!")
         elif mood_category == "negative":
@@ -182,7 +178,7 @@ if st.session_state.day <= 7:
         st.rerun()
 
 else:
-    # --- Week summary, quick stats (O(n) for n=7, small) ---
+    # --- Week summary ---
     st.header("🎉 Week Complete! Here's Your Mood Journey:")
     log_df = pd.DataFrame(st.session_state.logs)
     st.dataframe(log_df[["day", "date", "mood", "note", "age", "gender", "profession", "mood_category"]])
