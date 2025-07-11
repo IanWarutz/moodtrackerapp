@@ -40,12 +40,12 @@ if "demographics" not in st.session_state:
     with st.form("demographics_form", clear_on_submit=False):
         st.subheader("Tell us a bit about yourself (demographics)")
         age = st.number_input("Age", min_value=0, max_value=120, step=1)
-        gender = st.selectbox("Gender", options=["Prefer not to say", "Female", "Male", "Non-binary", "Other"])
+        gender = st.selectbox("Gender", options=["", "Prefer not to say", "Female", "Male", "Non-binary", "Other"])
         profession = st.text_input("Profession (e.g., Student, Engineer, Teacher, etc.)")
         submitted = st.form_submit_button("Submit Demographics")
         if submitted:
-            if not (age and profession.strip()):
-                st.error("Please enter your age and profession.")
+            if not (age and gender and profession.strip()):
+                st.error("Please enter your age, gender, and profession.")
                 st.stop()
             st.session_state.demographics = {
                 "age": int(age),
@@ -80,7 +80,7 @@ CORE_EMOTIONS = tuple(EMOTION_WHEEL.keys())
 # --- Display Emotion Wheel as a fast-loading SVG ---
 WHEEL_URL = "https://upload.wikimedia.org/wikipedia/commons/7/7b/Plutchik-wheel.svg"
 st.markdown("#### Choose your emotion from the wheel below")
-st.image(WHEEL_URL, caption="Plutchik's Emotion Wheel", use_column_width=True)
+st.image(WHEEL_URL, caption="Plutchik's Emotion Wheel", use_container_width=True)
 
 # --- Fast O(1) emotion wheel selector ---
 def emotion_wheel_selector():
@@ -130,6 +130,11 @@ if st.session_state.day <= 7:
     note = st.text_area("Anything you'd like to add? (optional)", key=f"note_{st.session_state.day}")
 
     if st.button("Log Mood"):
+        # Do not proceed if mood selection is somehow empty or unselected
+        if not mood or " - " not in mood or any(part.strip() == "" for part in mood.split(" - ", 1)):
+            st.error("Please make sure you select both a core emotion and a specific emotion from the wheel.")
+            st.stop()
+
         # O(1) core mood lookup
         core_mood = mood.split(" - ", 1)[0]
         mood_category = (
