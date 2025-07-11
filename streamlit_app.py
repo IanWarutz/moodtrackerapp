@@ -5,8 +5,63 @@ import datetime
 st.set_page_config(page_title="🧠 MoodTracker", page_icon="🧠", layout="centered")
 
 st.title("🧠 MoodTracker – Your Personal Wellbeing Journal")
+
+# --- Data Privacy Notice and Consent ---
+st.info(
+    "🔒 **Data Collection & Privacy Notice**\n\n"
+    "To help us understand wellbeing trends, we collect some basic demographic information (age, gender, profession) along with your mood logs. "
+    "All your data will be kept confidential and securely stored. By continuing, you consent to participate in this data collection. "
+    "If you do not consent, you will not be able to use the mood tracker."
+)
+
+if "consent_given" not in st.session_state:
+    st.session_state.consent_given = None
+
+if st.session_state.consent_given is None:
+    consent = st.radio(
+        "Do you consent to the collection and safe storage of your demographic data and mood logs?",
+        ["Yes, I consent", "No, I do not consent"],
+        index=None
+    )
+    if consent == "Yes, I consent":
+        st.session_state.consent_given = True
+        st.experimental_rerun()
+    elif consent == "No, I do not consent":
+        st.session_state.consent_given = False
+        st.warning("You must provide consent to use the Mood Tracker. Thank you for considering.")
+        st.stop()
+else:
+    if not st.session_state.consent_given:
+        st.warning("You must provide consent to use the Mood Tracker. Thank you for considering.")
+        st.stop()
+
+# --- Demographics Collection ---
+if "demographics" not in st.session_state:
+    with st.form("demographics_form", clear_on_submit=False):
+        st.subheader("Tell us a bit about yourself (demographics)")
+        age = st.number_input("Age", min_value=0, max_value=120, step=1)
+        gender = st.selectbox("Gender", options=["Prefer not to say", "Female", "Male", "Non-binary", "Other"])
+        profession = st.text_input("Profession (e.g., Student, Engineer, Teacher, etc.)")
+        submitted = st.form_submit_button("Submit Demographics")
+        if submitted:
+            if age and profession.strip() != "":
+                st.session_state.demographics = {
+                    "age": int(age),
+                    "gender": gender,
+                    "profession": profession.strip()
+                }
+                st.success("Demographics saved! Thank you.")
+                st.experimental_rerun()
+            else:
+                st.error("Please enter your age and profession.")
+                st.stop()
+
+if "demographics" not in st.session_state:
+    st.stop()
+
 st.write(
-    "Welcome! Track your mood for a week, build healthy habits, and celebrate your progress. "
+    f"Welcome, {st.session_state.demographics['profession']}! "
+    "Track your mood for a week, build healthy habits, and celebrate your progress. "
     "Let’s boost your self-awareness and mental wellbeing!"
 )
 
@@ -51,12 +106,15 @@ if st.session_state.day <= 7:
     note = st.text_area("Anything you'd like to add? (optional)", key=f"note_{st.session_state.day}")
 
     if st.button("Log Mood"):
-        # Store the log
+        # Store the log, including demographics for each entry (for analysis)
         entry = {
             "date": today_str,
             "day": st.session_state.day,
             "mood": mood,
-            "note": note
+            "note": note,
+            "age": st.session_state.demographics["age"],
+            "gender": st.session_state.demographics["gender"],
+            "profession": st.session_state.demographics["profession"]
         }
         st.session_state.logs.append(entry)
 
@@ -91,7 +149,7 @@ else:
     # --- Week summary ---
     st.header("🎉 Week Complete! Here's Your Mood Journey:")
     log_df = pd.DataFrame(st.session_state.logs)
-    st.dataframe(log_df[["day", "date", "mood", "note"]])
+    st.dataframe(log_df[["day", "date", "mood", "note", "age", "gender", "profession"]])
 
     # Stats
     mood_counts = log_df["mood"].value_counts()
@@ -119,7 +177,7 @@ else:
     st.write("#### Mood frequency chart")
     st.bar_chart(mood_counts)
 
-    # Download logs
+    # Download logs (with demographics)
     csv = log_df.to_csv(index=False).encode()
     st.download_button(
         label="Download my mood log (CSV)",
@@ -135,6 +193,8 @@ else:
         st.session_state.streak = 0
         st.session_state.max_streak = 0
         st.session_state.reminder_sent = False
+        st.session_state.demographics = None
+        st.session_state.consent_given = None
         st.experimental_rerun()
 
 # --- Footer encouragement ---
