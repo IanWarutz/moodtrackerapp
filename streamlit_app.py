@@ -64,16 +64,12 @@ st.write(
     "Let’s boost your self-awareness and mental wellbeing!"
 )
 
-# --- Emotion Wheel Definition (Robert Plutchik's Emotion Wheel) ---
-# Image is from Wikimedia Commons, public domain:
-# https://commons.wikimedia.org/wiki/File:Plutchik-wheel.svg
-# This wheel contains 8 primary emotions, each with 2 intensities and secondary emotions for a total of 24 unique emotions
-
-PLUTCHIK_WHEEL_URL = "https://upload.wikimedia.org/wikipedia/commons/7/7b/Plutchik-wheel.svg"
+# --- Use a PNG/JPG Plutchik Emotion Wheel (royalty-free, always visible) ---
+PLUTCHIK_WHEEL_PNG = "https://i.imgur.com/2G7QkCh.png"
 st.markdown("#### Choose your emotion by referencing the wheel below (click to enlarge):")
-st.image(PLUTCHIK_WHEEL_URL, caption="Plutchik's Emotion Wheel (click to enlarge)", use_container_width=True)
+st.image(PLUTCHIK_WHEEL_PNG, caption="Plutchik's Emotion Wheel (click to enlarge)", use_container_width=True)
 
-# The full set of emotions on the Plutchik wheel:
+# The full set of emotions on the Plutchik wheel (24 emotions)
 PLUTCHIK_EMOTIONS = {
     "Joy": ["Serenity", "Joy", "Ecstasy"],
     "Trust": ["Acceptance", "Trust", "Admiration"],
