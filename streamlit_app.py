@@ -25,7 +25,7 @@ if st.session_state.consent_given is None:
     )
     if consent == "Yes, I consent":
         st.session_state.consent_given = True
-        st.experimental_rerun()
+        st.rerun()
     elif consent == "No, I do not consent":
         st.session_state.consent_given = False
         st.warning("You must provide consent to use the Mood Tracker. Thank you for considering.")
@@ -51,7 +51,7 @@ if "demographics" not in st.session_state:
                     "profession": profession.strip()
                 }
                 st.success("Demographics saved! Thank you.")
-                st.experimental_rerun()
+                st.rerun()
             else:
                 st.error("Please enter your age and profession.")
                 st.stop()
@@ -143,7 +143,7 @@ if st.session_state.day <= 7:
         st.write("💬 *Every mood is valid. Thank you for taking care of yourself today!*")
         
         st.session_state.day += 1
-        st.experimental_rerun()
+        st.rerun()
 
 else:
     # --- Week summary ---
@@ -195,7 +195,7 @@ else:
         st.session_state.reminder_sent = False
         st.session_state.demographics = None
         st.session_state.consent_given = None
-        st.experimental_rerun()
+        st.rerun()
 
 # --- Footer encouragement ---
 st.markdown("---")
