@@ -64,10 +64,17 @@ st.write(
     "Let’s boost your self-awareness and mental wellbeing!"
 )
 
-# --- Use a PNG/JPG Plutchik Emotion Wheel (royalty-free, always visible) ---
-PLUTCHIK_WHEEL_PNG = "https://i.imgur.com/2G7QkCh.png"
+# --- Use a reliable, HD Plutchik Emotion Wheel (Royalty-Free PNG) ---
+# This image is Wikimedia Commons, high quality PNG, ~2000x2000px
+PLUTCHIK_WHEEL_PNG = "https://upload.wikimedia.org/wikipedia/commons/3/3a/Plutchik-wheel.png"
 st.markdown("#### Choose your emotion by referencing the wheel below (click to enlarge):")
-st.image(PLUTCHIK_WHEEL_PNG, caption="Plutchik's Emotion Wheel (click to enlarge)", use_container_width=True)
+st.image(
+    PLUTCHIK_WHEEL_PNG,
+    caption="Plutchik's Emotion Wheel (HD, click to enlarge)",
+    use_container_width=True,
+    output_format="PNG",
+    channels="RGB"
+)
 
 # The full set of emotions on the Plutchik wheel (24 emotions)
 PLUTCHIK_EMOTIONS = {
@@ -150,72 +157,3 @@ if st.session_state.day <= 7:
 
         # Streak logic
         if mood_category == "positive":
-            st.session_state.streak += 1
-            if st.session_state.streak > st.session_state.max_streak:
-                st.session_state.max_streak = st.session_state.streak
-        else:
-            st.session_state.streak = 0
-
-        # Feedback
-        if mood_category == "positive":
-            st.success("🌟 Great job! Keep the positivity going!")
-        elif mood_category == "negative":
-            st.warning("Remember: It's okay to have tough days. Tomorrow is a new chance.")
-        else:
-            st.info("Staying neutral is part of the human experience!")
-
-        if st.session_state.streak > 0:
-            st.balloons()
-            st.info(f"🔥 You're on a {st.session_state.streak}-day positive streak! Keep it up!")
-
-        st.write("💬 *Every mood is valid. Thank you for taking care of yourself today!*")
-
-        st.session_state.day += 1
-        st.rerun()
-
-else:
-    # --- Week summary ---
-    st.header("🎉 Week Complete! Here's Your Mood Journey:")
-    log_df = pd.DataFrame(st.session_state.logs)
-    st.dataframe(log_df[["day", "date", "mood", "note", "age", "gender", "profession", "mood_category"]])
-
-    # O(n) but n <= 7, so effectively O(1) for stats
-    mood_counts = log_df["mood"].value_counts()
-    most_common = mood_counts.idxmax()
-    positive_days = (log_df["mood_category"] == "positive").sum()
-    negative_days = (log_df["mood_category"] == "negative").sum()
-    streak = st.session_state.max_streak
-
-    st.write(f"**Most frequent mood:** {most_common}")
-    st.write(f"**Positive days:** {positive_days} / 7")
-    st.write(f"**Longest positive streak:** {streak} day(s)")
-
-    if positive_days >= 5:
-        st.success("🌈 You're doing amazing! Celebrate your positive energy this week.")
-    elif negative_days >= 4:
-        st.warning("Be gentle with yourself – tough weeks happen. Consider reaching out to someone you trust.")
-    else:
-        st.info("A balanced week! Remember, all feelings are part of your journey.")
-
-    st.write("👏 *You showed dedication by logging your mood each day. Self-awareness is the first step to self-care!*")
-    st.write("#### Mood frequency chart")
-    st.bar_chart(mood_counts)
-
-    # O(n) to_csv and download, n small
-    csv = log_df.to_csv(index=False).encode()
-    st.download_button(
-        label="Download my mood log (CSV)",
-        data=csv,
-        file_name='mood_log.csv',
-        mime='text/csv'
-    )
-
-    # O(1) restart
-    if st.button("Restart Mood Tracker"):
-        for key in ["logs", "day", "streak", "max_streak", "reminder_sent", "demographics", "consent_given"]:
-            if key in st.session_state:
-                del st.session_state[key]
-        st.rerun()
-
-st.markdown("---")
-st.markdown("💡 *Keep checking in with yourself. Small steps build big habits!*")
